@@ -1,0 +1,343 @@
+{
+  "info": {
+    "name": "Vuelos API (Java/Spring Boot)",
+    "description": "Pruebas de los 6 endpoints del puerto Java de pacifi/vuelos.\n\nFlujo recomendado: ejecutar en orden con 'Run collection'.\n- 1) Lista vuelos (guarda id y numero del primer vuelo)\n- 2) Lista equipajes (guarda dos ids)\n- 3) Crea reserva con esos datos\n- 4) Lista reservas\n- 5) Busca reserva por GET\n- 6) Busca reserva por POST\n- 7..) Casos de error: 404 vuelo inexistente, validación, etc.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "http://localhost:8080" },
+    { "key": "vueloId",      "value": "" },
+    { "key": "vueloNumero",  "value": "" },
+    { "key": "equipaje1Id",  "value": "" },
+    { "key": "equipaje2Id",  "value": "" },
+    { "key": "documento1",   "value": "12345678" },
+    { "key": "documento2",   "value": "87654321" }
+  ],
+  "item": [
+    {
+      "name": "1. GET /api/vuelos (order=numero)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/vuelos?order=numero",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "vuelos"],
+          "query": [{ "key": "order", "value": "numero" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const data = pm.response.json();",
+              "pm.test('Es un array no vacío', () => {",
+              "  pm.expect(Array.isArray(data)).to.be.true;",
+              "  pm.expect(data.length).to.be.greaterThan(0);",
+              "});",
+              "pm.test('Tiene los campos esperados', () => {",
+              "  const v = data[0];",
+              "  ['id','numero','origen','destino','fechaSalida','fechaLlegada','precio'].forEach(k => pm.expect(v).to.have.property(k));",
+              "});",
+              "pm.collectionVariables.set('vueloId', data[0].id);",
+              "pm.collectionVariables.set('vueloNumero', data[0].numero);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "1b. GET /api/vuelos/?order=fecha (con slash final)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/vuelos/?order=fecha",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "vuelos", ""],
+          "query": [{ "key": "order", "value": "fecha" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 (acepta slash final)', () => pm.response.to.have.status(200));",
+              "const data = pm.response.json();",
+              "pm.test('Está ordenado por fechaSalida ASC', () => {",
+              "  for (let i = 1; i < data.length; i++) {",
+              "    pm.expect(new Date(data[i-1].fechaSalida).getTime())",
+              "      .to.be.at.most(new Date(data[i].fechaSalida).getTime());",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. GET /api/equipajes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/equipajes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "equipajes"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const data = pm.response.json();",
+              "pm.test('Hay al menos 2 equipajes', () => pm.expect(data.length).to.be.at.least(2));",
+              "pm.test('Tiene id, tamano, costo', () => {",
+              "  ['id','tamano','costo'].forEach(k => pm.expect(data[0]).to.have.property(k));",
+              "});",
+              "pm.collectionVariables.set('equipaje1Id', data[0].id);",
+              "pm.collectionVariables.set('equipaje2Id', data[1].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. POST /api/reservas (crear)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vuelo\": {{vueloId}},\n  \"pasajeros\": [\n    {\n      \"nombre\": \"Juan Perez\",\n      \"documento\": \"{{documento1}}\",\n      \"equipaje\": [\n        { \"equipaje\": {{equipaje1Id}}, \"cantidad\": 1 }\n      ]\n    },\n    {\n      \"nombre\": \"Maria Lopez\",\n      \"documento\": \"{{documento2}}\",\n      \"equipaje\": [\n        { \"equipaje\": {{equipaje1Id}}, \"cantidad\": 1 },\n        { \"equipaje\": {{equipaje2Id}}, \"cantidad\": 2 }\n      ]\n    }\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+              "const r = pm.response.json();",
+              "pm.test('Devuelve la boleta expandida', () => {",
+              "  pm.expect(r).to.have.property('id');",
+              "  pm.expect(r).to.have.property('vuelo');",
+              "  pm.expect(r.vuelo).to.have.property('numero');",
+              "  pm.expect(r).to.have.property('total');",
+              "  pm.expect(r.pasajeros).to.have.lengthOf(2);",
+              "});",
+              "pm.test('Total = precio*nPasajeros + suma(equipajes)', () => {",
+              "  const precio = Number(r.vuelo.precio);",
+              "  const sumaEq = r.pasajeros.flatMap(p => p.equipaje).reduce((a, e) => a + Number(e.subtotal), 0);",
+              "  const esperado = (precio * r.pasajeros.length) + sumaEq;",
+              "  pm.expect(Number(r.total)).to.be.closeTo(esperado, 0.01);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. GET /api/reservas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const data = pm.response.json();",
+              "pm.test('Hay al menos 1 reserva', () => pm.expect(data.length).to.be.at.least(1));",
+              "pm.test('Cada reserva trae vuelo y pasajeros expandidos', () => {",
+              "  const r = data[0];",
+              "  pm.expect(r.vuelo).to.have.property('numero');",
+              "  pm.expect(r).to.have.property('pasajeros');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. GET /api/reservas/buscar?documento&numero_vuelo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas/buscar?documento={{documento1}}&numero_vuelo={{vueloNumero}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas", "buscar"],
+          "query": [
+            { "key": "documento", "value": "{{documento1}}" },
+            { "key": "numero_vuelo", "value": "{{vueloNumero}}" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test('La reserva contiene al pasajero buscado', () => {",
+              "  pm.expect(r.vuelo.numero).to.eql(pm.collectionVariables.get('vueloNumero'));",
+              "  const docs = r.pasajeros.map(p => p.documento);",
+              "  pm.expect(docs).to.include(pm.collectionVariables.get('documento1'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. POST /api/reservas/buscar-post (body)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas/buscar-post",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas", "buscar-post"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documento\": \"{{documento2}}\",\n  \"numero_vuelo\": \"{{vueloNumero}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test('Devuelve la reserva con el pasajero del body', () => {",
+              "  pm.expect(r.vuelo.numero).to.eql(pm.collectionVariables.get('vueloNumero'));",
+              "  const docs = r.pasajeros.map(p => p.documento);",
+              "  pm.expect(docs).to.include(pm.collectionVariables.get('documento2'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. (Error) GET /api/reservas/buscar — no existe → 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas/buscar?documento=00000000&numero_vuelo=NO_EXISTE",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas", "buscar"],
+          "query": [
+            { "key": "documento", "value": "00000000" },
+            { "key": "numero_vuelo", "value": "NO_EXISTE" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 404', () => pm.response.to.have.status(404));",
+              "pm.test(\"Mensaje 'No se encontró la reserva'\", () => {",
+              "  pm.expect(pm.response.json().detail).to.match(/No se encontr/i);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. (Error) POST /api/reservas — vuelo inexistente → 404",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vuelo\": 999999,\n  \"pasajeros\": [\n    { \"nombre\": \"X\", \"documento\": \"11111111\", \"equipaje\": [] }\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. (Error) POST /api/reservas — sin pasajeros → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vuelo\": {{vueloId}},\n  \"pasajeros\": []\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400 (validación)', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
