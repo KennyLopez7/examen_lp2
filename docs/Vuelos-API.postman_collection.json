@@ -1,0 +1,140 @@
+{
+  "info": {
+    "name": "Vuelos API",
+    "description": "Coleccion completa de endpoints del backend de vuelos (Django REST). Cambia la variable {{baseUrl}} segun donde corras el backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api",
+      "description": "URL base del backend. Para usar el backend publico cambia a: https://vuelos-api.multicomp.pe/api"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Listar vuelos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vuelos/",
+          "host": ["{{baseUrl}}"],
+          "path": ["vuelos", ""]
+        },
+        "description": "Lista todos los vuelos disponibles. Sin params ordena por numero."
+      }
+    },
+    {
+      "name": "1b. Listar vuelos (orden por fecha)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vuelos/?order=fecha",
+          "host": ["{{baseUrl}}"],
+          "path": ["vuelos", ""],
+          "query": [
+            { "key": "order", "value": "fecha" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "1c. Listar vuelos (orden por numero)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vuelos/?order=numero",
+          "host": ["{{baseUrl}}"],
+          "path": ["vuelos", ""],
+          "query": [
+            { "key": "order", "value": "numero" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Listar equipajes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/equipajes/",
+          "host": ["{{baseUrl}}"],
+          "path": ["equipajes", ""]
+        },
+        "description": "Catalogo de tipos de equipaje y su costo."
+      }
+    },
+    {
+      "name": "3. Listar reservas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/reservas/",
+          "host": ["{{baseUrl}}"],
+          "path": ["reservas", ""]
+        },
+        "description": "Lista todas las reservas con vuelo, pasajeros y equipaje (boleta expandida)."
+      }
+    },
+    {
+      "name": "4. Crear reserva",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vuelo\": 1,\n  \"pasajeros\": [\n    {\n      \"nombre\": \"Juan Perez\",\n      \"documento\": \"12345678\",\n      \"equipaje\": [\n        { \"equipaje\": 1, \"cantidad\": 1 }\n      ]\n    },\n    {\n      \"nombre\": \"Maria Lopez\",\n      \"documento\": \"87654321\",\n      \"equipaje\": [\n        { \"equipaje\": 3, \"cantidad\": 1 },\n        { \"equipaje\": 1, \"cantidad\": 1 }\n      ]\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/reservas/",
+          "host": ["{{baseUrl}}"],
+          "path": ["reservas", ""]
+        },
+        "description": "Crea una reserva nueva. Backend calcula el total automaticamente."
+      }
+    },
+    {
+      "name": "5. Buscar reserva (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/reservas/buscar/?documento=12345678&numero_vuelo=LA2034",
+          "host": ["{{baseUrl}}"],
+          "path": ["reservas", "buscar", ""],
+          "query": [
+            { "key": "documento", "value": "12345678" },
+            { "key": "numero_vuelo", "value": "LA2034" }
+          ]
+        },
+        "description": "Busca reserva por documento + numero de vuelo (query string)."
+      }
+    },
+    {
+      "name": "6. Buscar reserva (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documento\": \"12345678\",\n  \"numero_vuelo\": \"LA2034\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/reservas/buscar-post/",
+          "host": ["{{baseUrl}}"],
+          "path": ["reservas", "buscar-post", ""]
+        },
+        "description": "Misma busqueda que el punto 5 pero con los datos en el body JSON."
+      }
+    }
+  ]
+}
