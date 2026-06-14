@@ -1,5 +1,7 @@
 # Vuelos Frontend (Angular 18)
 
+> Repositorio: **LopezK.J** — trabajos del chat LPII
+
 Frontend Angular 18 con componentes standalone y Tailwind CSS para el sistema de reservas de vuelos.
 
 ## Requisitos
@@ -70,3 +72,7 @@ export const environment = {
 npm run build
 # Output en dist/vuelos-frontend
 ```
+
+## Probar la API
+
+En `docs/Vuelos-API.postman_collection.json` hay una colección Postman lista para importar con todos los endpoints documentados (listar/crear reservas, buscar GET y POST, equipajes, vuelos).
